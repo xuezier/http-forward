@@ -35,6 +35,7 @@ class ChunkHandle {
     }
     this.run = this.concat_content;
     var _remain_buffer = chunk.slice(_split_index + 1); //排除掉\0字符
+    // console.log(chunk,_split_index);
     // 考虑到content-length \0 后面就没东西了，就没必要解析了
     _remain_buffer.length && this.run(_remain_buffer);
   }
@@ -52,7 +53,6 @@ class ChunkHandle {
       //当下的所需的数据块切出，进入解析器
       this._buffer_cache.push(_current_buffer);
       this._content_length = 0;
-      this.parse_content();
       //剩余的包重新进入下一轮的解析
       this.get_content_length(_remain_buffer);
     }
@@ -61,9 +61,11 @@ class ChunkHandle {
     this.run = this.get_content_length;
     try {
       var _result_str = Buffer.concat(this._buffer_cache);
+      // console.log(_result_str);
       var result = JSON.parse(_result_str + '', (key, value) => {
         return value && value.type === 'Buffer' && (Array.isArray(value.data) || typeof value.data === 'string') ? new Buffer(value.data) : value;
       });
+      console.log(result);
       this._buffer_cache = [];
     } catch (e) {
       console.error('数据解析出错', e.stack, this._buffer_cache, _result_str.toString());

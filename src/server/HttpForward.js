@@ -12,6 +12,7 @@ class HttpForwardServer extends eventEmitter {
    * create HttpForwardServer
    * @param {Object} params
    * @param {Number} params.socketPort
+   * @param {Number} params.timeout
    */
   constructor(params) {
     super();
@@ -19,6 +20,8 @@ class HttpForwardServer extends eventEmitter {
     this.ResMap = new Map();
     this.AuthMap = new Map();
     this.ApiCodeMap = new Map();
+
+    this.TIME_OUT = params.timeout || 5000;
 
     this._socketServer(params.socketPort);
   }
@@ -33,27 +36,44 @@ class HttpForwardServer extends eventEmitter {
     var users = this.AuthMap;
     var clients = this.clients;
     var apicodes = this.ApiCodeMap;
+    var socketKey = `${socket.remoteAddress}:${socket.remotePort}`;
+    var authed = false;
     // console.log(socket.remoteAddress, socket.remotePort);
+
+    socket.on('close', function(){
+      console.log('tcp connect close');
+    });
 
     HandleSocket(socket);
 
+    setTimeout(function() {
+      if (!authed) {
+        console.error('socket auth time out');
+        socket.destroy();
+      }
+    }, this.TIME_OUT);
+
     socket.onMsg('auth-init', function(msg) {
+      console.log(socketKey)
       var auth = msg.info;
       var user = `${auth.appid}:${auth.appsecret}`;
       if (!users.has(user)) return socket.msgInfo('auth-error', 'wrong user');
       if (users.get(user)) return socket.msgInfo('auth-error', 'user has userd');
 
+      authed = true;
       socket.on('close', function() {
-        console.log('tcp connect close');
         users.set(user, false);
         clients.delete(auth.appid);
       });
 
       var code = crypto.randomBytes(16).toString('hex').toUpperCase();
-      users.set(user, code);
+      users.set(user, socketKey);
       apicodes.set(auth.appid, code);
       clients.set(auth.appid, socket);
       socket.msgInfo('auth-success', code);
+      setTimeout(function(){
+        socket.msgInfo('auth-eee',code);
+      },10000);
     });
   }
 

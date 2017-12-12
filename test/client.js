@@ -9,7 +9,7 @@ client.patch(app);
 
 app.all('/test', function(req, res, next) {
   // console.log('heiheihei/test');
-  res.send(200, '2223');
+  res.send('hello world');
 });
 
 app.listen(3333, client.register({ appid: 'xuezi', appsecret: '123456' }));

@@ -32,6 +32,7 @@ function handleSocket(socket, options) {
   // listening receive data
   socket.on('data', function(chunk) {
     chuck_handle.run(chunk);
+    console.log(chunk+'');
   });
   // encapsulation post function
   socket.msg = function(data, cb) {
